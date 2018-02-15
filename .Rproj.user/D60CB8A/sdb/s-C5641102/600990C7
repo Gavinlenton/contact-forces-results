@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "# contact-forces-results\nContains stats and raw data used to generate outputs of load sharing contact force data\n\nContact Gavin Lenton (g.lenton@griffith.edu.au) for more info",
+    "created" : 1518683045126.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4066110865",
+    "id" : "600990C7",
+    "lastKnownWriteTime" : 1518683263,
+    "last_content_update" : 1518683263411,
+    "path" : "~/Google Drive/postDoctoralWork/2018 defence contact forces/EMG-assisted results/stats/contact-forces-results/README.md",
+    "project_path" : "README.md",
+    "properties" : {
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "markdown"
+}
