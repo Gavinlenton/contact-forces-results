@@ -1,28 +1,73 @@
 ## ----- PROCESS data ----- ##
 
 # Load Tidyverse (for some reason it doesn't recognise tidyverse as a package so I load it individual package)
-require("ggplot2"); require("tibble"); require("tidyr"); require("readr"); require("purrr"); require("dplyr"); require("forcats"); require("tidyselect")
+require("ggplot2"); require("tibble"); require("tidyr"); require("readr"); require("purrr"); require("dplyr"); require("forcats"); require("tidyselect"); library("broom")
 
-# Example function with error check
-mmm2 <- function(x) {
-  if(!is.numeric(x)) {
-    stop('I am so sorry, but this function only works for numeric input!\n',
-         'You have provided an object of class: ', class(x)[1])
+# Load libraries for multiple imputation by chained equations
+require("Rcpp"); require("VIM"); require("mice"); require("car")
+
+## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+##   measurevar: the name of a column that contains the variable to be summarized
+##   groupvars: a vector containing names of columns that contain grouping variables
+##   conf.interval: the percent range of the confidence interval (default is 95%)
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+  library(plyr)
+  
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
   }
-  max(x) - min(x)
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm),
+                     median = median (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+  )
+  
+  # Rename the "mean" column    
+  #datac <- rename(datac, c("mean" = measurevar))
+  
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
 }
 
 # Function to reshape data from wide to long format
 reshape4ANOVA <- function(data2shape, varName){
   
+  # Error check for numeric data input
+  if(is.numeric(data2shape)) {
+    stop('I am so sorry, but this function does not work for numeric input!\n',
+         'You have provided an object of class: ', class(data2shape)[1])
+  }
+  
   # Reshape while preserving column name as variable name and leaving Participants as column
   df_final <- gather(data2shape, key = armour_type, value = !!varName, -Participants)
   
   # Add extra columns
-  df_final$armour <- as.factor(gl(4, 80, labels = c("pARM1", "cARM1", "TBAS", "cARM2")))
-  df_final$speed <- as.factor(gl(2, 20, labels = c("Moderate", "Fast")))
-  df_final$mass <- as.factor(gl(2, 40, labels = c("15kg", "30kg")))
-  df_final$L1 <- NULL
+  df_final$Armour <- as.factor(gl(4, 80, labels = c("pARM1", "cARM1", "TBAS", "cARM2")))
+  #df_final$Armour <- as.factor(unlist(strsplit(df_final$armour_type, "_")))[seq(from = 2, to = 625, by = 2)]
+  df_final$Speed <- as.factor(gl(2, 20, labels = c("Moderate", "Fast")))
+  df_final$Mass <- as.factor(parse_number(df_final$armour_type)) # Find numbers from data because they correspond to mass
+  
+  # Select columns to keep (here we discard original armour_type column)
+  df_final <- df_final %>% 
+    select(Participants, Armour, Mass, Speed, !!varName)
   
   return(df_final);
 }
@@ -36,11 +81,11 @@ missingValueImputation <- function(data2impute){
   # Plot missing values
   missing_plot <- aggr(data2impute, col=c('navyblue','yellow'),
   numbers=TRUE, sortVars=TRUE,
-  labels=names(data2impute), cex.axis=.7,
+  labels=names(data2impute), cex.axis=1,
   gap=3, ylab=c("Missing data","Pattern"))
   
   # maxit – Refers to no. of iterations taken to impute missing values
-  # method – Refers to method used in imputation. we used predictive mean matching.
+  # method – Refers to method used in imputation. we used predictive mean matching (pmm).
   # m  – Refers to 5 imputed data sets
   imputed_Data <- invisible(mice(data2impute, m=5, maxit = 5, method = 'pmm'));
   
@@ -51,31 +96,52 @@ missingValueImputation <- function(data2impute){
 
 # Function to detect outliers and remove - uses Tukey method (1.5 * IQR)
 outlierKD <- function(dt, var) {
-  var_name <- eval(substitute(var),eval(dt))
-  na1 <- sum(is.na(var_name))
-  m1 <- mean(var_name, na.rm = T)
-  par(mfrow=c(2, 2), oma=c(0,0,0,0))
-  boxplot(var_name, main="With outliers")
-  hist(var_name, main="With outliers", xlab=NA, ylab=NA)
-  outlier <- boxplot.stats(var_name)$out
+  
+  # Get just the variable I want
+  variable_frame <- dt %>% 
+    select(!!var)
+  variable<- variable_frame[[1]]
+  
+  na1 <- sum(is.na(variable)) # Get sum of missing values
+  m1 <- mean(variable, na.rm = T) # Get mean of variable without values
+  
+  par(mfrow=c(2, 2), oma=c(1,0,1,0)) # Set up the plots
+  # Plot boxplot and histogram of variable with outliers labelled
+  boxplot(variable, main="With outliers", xlab = var)
+  hist(variable, main="With outliers", xlab=var, ylab=NA)
+  
+  # Get outlier stats
+  outlier <- boxplot.stats(variable)$out
   mo <- mean(outlier)
-  var_name_new <- ifelse(var_name %in% outlier, NA, var_name)
-  boxplot(var_name_new, main="Without outliers")
-  hist(var_name_new, main="Without outliers", xlab=NA, ylab=NA)
-  title(paste(varName), outer=TRUE)
-  na2 <- sum(is.na(var_name_new))
-  cat("Outliers identified:", na2 - na1, "n")
-  cat("Proportion (%) of outliers:", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "n")
-  cat("Mean of the outliers:", round(mo, 2), "n")
-  m2 <- mean(var_name_new, na.rm = T)
-  cat("Mean without removing outliers:", round(m1, 2), "n")
-  cat("Mean if we remove outliers:", round(m2, 2), "n")
+  
+  # Remove outliers and assign to new variable
+  variable_new <- ifelse(variable %in% outlier, NA, variable)
+  # Make same plots as before
+  boxplot(variable_new, main="Without outliers", xlab = var)
+  hist(variable_new, main="Without outliers", xlab=var, ylab=NA)
+  title(paste("Removing outliers"), outer=TRUE)
+  na2 <- sum(is.na(variable_new))
+  
+  # Print to screen:
+  cat("Outliers identified:", na2 - na1, "\n") # the number of outliers identified
+  cat("Proportion (%) of outliers:", round((na2 - na1) / sum(!is.na(variable))*100, 1), "\n") # the prorportion relative to entire data set
+  cat("Mean of the outliers:", round(mo, 2), "\n")
+  m2 <- mean(variable_new, na.rm = T)
+  cat("Mean without removing outliers:", round(m1, 2), "\n")
+  cat("Mean if we remove outliers:", round(m2, 2), "\n") # the change in mean if they are removed
+  
+  # Choose if outliers will be removed
   response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ")
   if(response == "y" | response == "yes"){
-    dt[ncol(dt)+1] <- invisible(var_name_new)
-    name <- "data"
+    dt[ncol(dt)+1] <- invisible(variable_new)
+    name <- paste(var, "noOut", sep = "_") # Choose new variable name
     names(dt)[ncol(dt)] <- name
     assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
+    
+    # Choose which columns to keep in data frame - here we delete existing variable containing outliers
+    dt <- dt %>% 
+      select(Participants, Armour, Mass, Speed, !!name)
+    
     cat("Outliers successfully removed")
     return(dt)
     return(response)
@@ -86,7 +152,40 @@ outlierKD <- function(dt, var) {
   }
 }
 
-# Import data
+# Functions to perform ANOVA. Takes data frame and the ANOVA model expressed as a string as inputs
+anova_wrapper <- function(data, model_expression_as_string,...) {
+  f_wrap <- paste0('function(.) {',model_expression_as_string,'}') %>% 
+      parse(text=.) %>% eval
+          data %>% 
+              do(f_wrap(.) %>% 
+                 Anova(...=...) %>% 
+                    tidy) %>% return
+}
+
+# Function to output summary for all factors in ANOVA
+outputSummary <- function(dt, varName, model_ANOVA){
+  
+  # Make summaries of all variables
+  # 3-way interaction - get grouping variable names from ANOVA list of comparisons, the names are split by the ':' symbol
+  summary_all <- summarySE(data = dt, measurevar=paste(varName, "noOut", sep = "_"), groupvars=unlist(strsplit(model_ANOVA$term[7], split = ":"))) 
+  
+  # 2-way interactions
+  summary_mass_speed <- summarySE(data = dt, measurevar=paste(varName, "noOut", sep = "_"), groupvars=unlist(strsplit(model_ANOVA$term[6], split = ":"))) 
+  summary_armour_speed <- summarySE(data = dt, measurevar=paste(varName, "noOut", sep = "_"), groupvars=unlist(strsplit(model_ANOVA$term[5], split = ":")))
+  summary_armour_mass <- summarySE(data = dt, measurevar=paste(varName, "noOut", sep = "_"), groupvars=unlist(strsplit(model_ANOVA$term[4], split = ":")))
+
+  # Main effects
+  summary_speed <- summarySE(data = dt, measurevar=paste(varName, "noOut", sep = "_"), groupvars=model_ANOVA$term[3])
+  summary_mass <- summarySE(data = dt, measurevar=paste(varName, "noOut", sep = "_"), groupvars=model_ANOVA$term[2])
+  summary_armour <- summarySE(data = dt, measurevar=paste(varName, "noOut", sep = "_"), groupvars=model_ANOVA$term[1]) 
+
+  # Save to .text files
+  print(summary_all); print(summary_armour_mass); print(summary_armour_speed); print(summary_mass_speed); print(summary_armour); 
+  print(summary_mass); print(summary_speed);
+  
+}
+
+# Define path to obtain raw data from
 armour_type_dir <- "~/Google Drive/postDoctoralWork/2018 defence contact forces/EMG-assisted results/stats/contact-forces-results/only_armour_type"
 fullFileNames <- dir(path = armour_type_dir, pattern="*.csv", full.names = TRUE)
 fileNames <- dir(path = armour_type_dir, pattern="*.csv")
@@ -96,14 +195,14 @@ y <- 1
 for(i in fullFileNames){
   
   # Get name of variable
-  t <- regexpr(".csv", fileNames[y])
-  varName <- substr(fileNames[y], 1, t-1)
+  t <- regexpr(".csv", fileNames[y]) # Determine where the stop index is
+  varName <- substr(fileNames[y], start = 1, stop = t-1) # Use substr to extract variable name without .csv
   
   # Read .csv file
   exp.data = as_tibble(read.csv(i))
   
   # Redirect all output to a text file.
-  sink(paste("./summary_text_files/", varName, "_results.txt", sep = ""), append=FALSE, split=FALSE)
+  sink(paste("./summaries/", varName, "_results.txt", sep = ""), append=FALSE, split=FALSE)
   
   print("");
   print("");
@@ -113,48 +212,65 @@ for(i in fullFileNames){
   
   # Reshape to long format
   exp.data.reshaped <- reshape4ANOVA(exp.data, varName)
+  # Save reshaped data as temp format
+  saveRDS(exp.data.reshaped, paste(armour_type_dir, "/", varName, "_tidied.rds", sep=""));
   
   # Check for outliers
-  exp.data.reshaped[!exp.data.reshaped %in% boxplot.stats(exp.data.reshaped)$out]
-  #exp.data.l <- outlierKD(exp.data.reshaped, data)
+  exp.data.l <- outlierKD(exp.data.reshaped, varName)
   
+  # Impute missing values only if there are missing values
+  exp.data.outRemoved <- missingValueImputation(exp.data.l)
   # Stop outputting to text
   sink()
   
-  # Impute missing values only if there are missing values
-  exp.data.noOut <- missingValueImputation(exp.data.l[, c(1, 3:length(exp.data.l))])
-  
   # Write new data to .csv
-  write.csv(exp.data.noOut, paste("./outliersRemoved/", varName, "_noOut.csv", sep = ""))
+  saveRDS(exp.data.noOut, paste("./outliersRemoved/", varName, "_noOut.rds", sep = ""))
   
-  # exp.data <- exp.data%>%
-  #   mutate(country = factor(country),
-  #          continent = factor(continent))
-  # str(gapminder)
+  # Output to text again
+  sink(paste("./summaries/", varName, "_results.txt", sep = ""), append=TRUE, split=FALSE)
   
-  y <- y + 1
+  # Test for normality
+  shapiro_test <- shapiro.test(exp.data.outRemoved);
+  print(shapiro_test$p.value)
+  sink()
+  
+  # QQ plots to show normality
+  require(graphics)
+  graphics.off()
+  
+  # Save QQ plot
+  png(file= paste("./QQ_plots/QQ_plot_", varName, ".png", sep = ""),width = 7, height = 5, units = 'in', res = 300)
+  qqnorm(exp.data.outRemoved[,length(exp.data.outRemoved)-1], main = "Normal Q-Q Plot",
+         xlab = "Theoretical Quantiles", ylab = varName,
+         plot.it = TRUE, datax = FALSE)
+  qqline(exp.data.outRemoved[,length(exp.data.outRemoved)-1], col = 2, probs = c(0.2, 0.8), qtype = 7)
+  graphics.off()
+  
+  # Output to same text file
+  sink(paste("./summaries/", varName, "_results.txt", sep = ""), append=TRUE, split=FALSE)
+
+  # Assign model for the ANOVA
+  aov_model_expression_as_string = paste('aov(', varName, '_noOut ', '~ Armour * Mass * Speed, data = .)', sep = "") # Armour X Mass X Speed
+  model_ANOVA <- exp.data.outRemoved %>% 
+    anova_wrapper(model_expression_as_string = aov_model_expression_as_string, type="II") # Type 2 repeated measures ANOVA
+  
+  # Print to text file
+  print("ANOVA comparing armour types, mass, and walking speed")
+  print(model_ANOVA)
+
+  # Generate summary statistics and print it all to the text file
+  outputSummary(exp.data.outRemoved, varName, model_ANOVA)
+  sink()
+
+  # Create one large variable with all the data
+  if (y == 1){
+    allData <- exp.data.noOut
+  } else{
+    # Join with previous tibble and match participants, armour, mass, and speed
+    allData <- allData %>% 
+      inner_join(exp.data.outRemoved, by = c("Participants", "Armour", "Mass", "Speed"))
+  }
+  
+  # Increment y
+  y = y + 1
 }
-
-# filter() takes logical expressions and returns the rows for which all are TRUE.
-
-# Use %>% as a pipe operator for functions and data frames. Basically, %>%  means "then"
-# E.g.: gapminder %>%                             Or in normal R language: gapminder[gapminder$country == "Cambodia", c("year", "lifeExp")]
-#         filter(country == "Cambodia") %>%
-#         select(year, lifeExp)
-
-
-# Use rename() to rename variables
-
-# everything() is one of several helpers for variable selection
-
-# group_by() adds extra structure to your dataset – grouping information – which lays the groundwork for computations within the groups.
-
-# summarize_at() applies the same summary function(s) to multiple variables.
-
-# For example
-# my_gap %>%
-#   filter(year %in% c(1952, 2007)) %>%
-#   group_by(continent, year) %>%
-#   summarize_at(vars(lifeExp, gdpPercap), funs(mean, median))
-
-# Use saveRDS(gap_life_exp, "gap_life_exp.rds") to preserve factor level order etc. and readRDS() to read it back in the same way
