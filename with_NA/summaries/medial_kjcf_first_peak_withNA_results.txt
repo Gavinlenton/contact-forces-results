@@ -1,0 +1,48 @@
+
+=========== VARIABLE:  medial_kjcf_first_peak_withNA  =============
+
+Outliers identified: 1 
+Proportion (%) of outliers: 0.9 
+Mean of the outliers: 6.26 
+Mean without removing outliers: 3.39 
+Mean if we remove outliers: 3.36 
+Outliers successfully removed 
+
+ Variables sorted by number of missings: 
+                            Variable Count
+ medial_kjcf_first_peak_withNA_noOut 0.125
+                        Participants 0.000
+                                Mass 0.000
+                               Speed 0.000
+
+	Shapiro-Wilk normality test
+
+data:  medial_kjcf_first_peak_withNA
+W = 0.98395, p-value = 0.1651
+
+ANOVA comparing mass and walking speed
+        term    sumsq  df statistic p.value
+1       Mass  7.40639   2   6.54584 0.00204
+2      Speed  6.37233   1  11.26385 0.00107
+3 Mass:Speed  0.00988   2   0.00873 0.99131
+4  Residuals 64.49356 114        NA      NA
+
+ MASS * SPEED
+  Mass    Speed  N mean    sd median    se    ci
+1    0 Moderate 20 2.85 0.671   2.83 0.150 0.314
+2    0     Fast 20 3.29 0.654   3.27 0.146 0.306
+3   15 Moderate 20 3.14 0.806   2.89 0.180 0.377
+4   15     Fast 20 3.62 0.806   3.45 0.180 0.377
+5   30 Moderate 20 3.45 0.770   3.54 0.172 0.361
+6   30     Fast 20 3.90 0.790   3.85 0.177 0.370
+
+MASS
+  Mass  N mean    sd median    se    ci
+1    0 40 3.07 0.692   3.08 0.109 0.221
+2   15 40 3.38 0.833   3.20 0.132 0.266
+3   30 40 3.68 0.803   3.77 0.127 0.257
+
+SPEED
+     Speed  N mean    sd median    se    ci
+1 Moderate 60 3.15 0.779   3.17 0.101 0.201
+2     Fast 60 3.61 0.782   3.59 0.101 0.202

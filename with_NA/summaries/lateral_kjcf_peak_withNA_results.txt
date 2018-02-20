@@ -1,0 +1,52 @@
+
+=========== VARIABLE:  lateral_kjcf_peak_withNA  =============
+
+Outliers identified: 2 
+Proportion (%) of outliers: 1.9 
+Mean of the outliers: 5.7 
+Mean without removing outliers: 2.58 
+Mean if we remove outliers: 2.52 
+
+	Paired t-test
+
+data:  lateral_kjcf_peak_withNA_noOut by Speed
+t = 0.2122, df = 59, p-value = 0.8327
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -0.1091024  0.1349870
+sample estimates:
+mean of the differences 
+             0.01294232 
+
+       t 
+0.212197 
+[1] 0.8326847
+al_kjcf_peak_withNA
+W = 0.97213, p-value = 0.01355
+
+ANOVA comparing mass and walking speed
+        term    sumsq  df statistic p.value
+1       Mass  7.23396   2   4.88980 0.00917
+2      Speed  0.00503   1   0.00679 0.93446
+3 Mass:Speed  0.36025   2   0.24351 0.78428
+4  Residuals 84.32566 114        NA      NA
+
+ MASS * SPEED
+  Mass    Speed  N mean    sd median    se    ci
+1    0 Moderate 20 2.29 1.039   1.78 0.232 0.486
+2    0     Fast 20 2.16 0.839   1.90 0.188 0.393
+3   15 Moderate 20 2.70 1.004   2.58 0.224 0.470
+4   15     Fast 20 2.66 0.789   2.58 0.176 0.369
+5   30 Moderate 20 2.73 0.663   2.77 0.148 0.310
+6   30     Fast 20 2.86 0.765   2.91 0.171 0.358
+
+MASS
+  Mass  N mean    sd median    se    ci
+1    0 40 2.22 0.935   1.84 0.148 0.299
+2   15 40 2.68 0.891   2.58 0.141 0.285
+3   30 40 2.79 0.709   2.89 0.112 0.227
+
+SPEED
+     Speed  N mean    sd median    se    ci
+1 Moderate 60 2.57 0.924   2.58 0.119 0.239
+2     Fast 60 2.56 0.839   2.61 0.108 0.217

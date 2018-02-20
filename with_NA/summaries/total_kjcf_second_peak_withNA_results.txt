@@ -1,0 +1,48 @@
+
+=========== VARIABLE:  total_kjcf_second_peak_withNA  =============
+
+Outliers identified: 0 
+Proportion (%) of outliers: 0 
+Mean of the outliers: NaN 
+Mean without removing outliers: 4.6 
+Mean if we remove outliers: 4.6 
+Outliers successfully removed 
+
+ Variables sorted by number of missings: 
+                            Variable     Count
+ total_kjcf_second_peak_withNA_noOut 0.1166667
+                        Participants 0.0000000
+                                Mass 0.0000000
+                               Speed 0.0000000
+
+	Shapiro-Wilk normality test
+
+data:  total_kjcf_second_peak_withNA
+W = 0.95738, p-value = 0.07832
+
+ANOVA comparing mass and walking speed
+        term    sumsq  df statistic p.value
+1       Mass  26.6659   2    6.6398 0.00187
+2      Speed   0.0321   1    0.0160 0.89969
+3 Mass:Speed   0.2993   2    0.0745 0.92824
+4  Residuals 228.9178 114        NA      NA
+
+ MASS * SPEED
+  Mass    Speed  N mean   sd median    se    ci
+1    0 Moderate 20 4.05 1.47   3.66 0.328 0.687
+2    0     Fast 20 4.16 1.46   3.74 0.327 0.684
+3   15 Moderate 20 4.71 1.46   4.24 0.326 0.682
+4   15     Fast 20 4.60 1.23   4.25 0.275 0.575
+5   30 Moderate 20 5.21 1.43   4.84 0.320 0.670
+6   30     Fast 20 5.30 1.44   4.96 0.322 0.675
+
+MASS
+  Mass  N mean   sd median    se    ci
+1    0 40 4.10 1.45   3.72 0.229 0.463
+2   15 40 4.66 1.33   4.24 0.211 0.426
+3   30 40 5.26 1.42   4.90 0.224 0.454
+
+SPEED
+     Speed  N mean   sd median    se    ci
+1 Moderate 60 4.65 1.51   4.37 0.194 0.389
+2     Fast 60 4.69 1.44   4.35 0.186 0.372
