@@ -1,0 +1,97 @@
+
+=========== VARIABLE:  lateral_kjcf_peak  =============
+Outliers identified: 9 
+Proportion (%) of outliers: 3.1 
+Mean of the outliers: 5.74 
+Mean without removing outliers: 2.88 
+Mean if we remove outliers: 2.79 
+Outliers successfully removed 
+
+ Variables sorted by number of missings: 
+                Variable   Count
+ lateral_kjcf_peak_noOut 0.11875
+            Participants 0.00000
+                  Armour 0.00000
+                    Mass 0.00000
+                   Speed 0.00000
+
+	Shapiro-Wilk normality test
+
+data:  lateral_kjcf_peak
+W = 0.99091, p-value = 0.04545
+
+ANOVA comparing armour types, mass, and walking speed
+               term   sumsq  df statistic p.value
+1            Armour   1.678   3     0.810 0.48936
+2              Mass   7.408   1    10.724 0.00118
+3             Speed   0.195   1     0.282 0.59604
+4       Armour:Mass   1.399   3     0.675 0.56783
+5      Armour:Speed   0.403   3     0.194 0.90022
+6        Mass:Speed   0.584   1     0.845 0.35862
+7 Armour:Mass:Speed   0.229   3     0.110 0.95398
+8         Residuals 210.012 304        NA      NA
+
+ COMPARISON OF ALL
+   Armour Mass    Speed  N mean    sd median    se    ci
+1   pARM1   15 Moderate 20 2.67 0.969   2.55 0.217 0.454
+2   pARM1   15     Fast 20 2.65 0.896   2.60 0.200 0.419
+3   pARM1   30 Moderate 20 2.59 0.695   2.65 0.155 0.325
+4   pARM1   30     Fast 20 2.90 0.780   2.78 0.174 0.365
+5   cARM1   15 Moderate 20 2.65 0.834   2.69 0.187 0.390
+6   cARM1   15     Fast 20 2.67 0.722   2.81 0.161 0.338
+7   cARM1   30 Moderate 20 2.98 0.733   2.73 0.164 0.343
+8   cARM1   30     Fast 20 3.13 0.827   3.01 0.185 0.387
+9    TBAS   15 Moderate 20 2.70 1.004   2.58 0.224 0.470
+10   TBAS   15     Fast 20 2.60 0.799   2.56 0.179 0.374
+11   TBAS   30 Moderate 20 3.04 0.777   2.94 0.174 0.364
+12   TBAS   30     Fast 20 3.11 0.884   3.00 0.198 0.414
+13  cARM2   15 Moderate 20 2.74 0.932   2.66 0.208 0.436
+14  cARM2   15     Fast 20 2.71 0.711   2.73 0.159 0.333
+15  cARM2   30 Moderate 20 3.04 0.921   2.99 0.206 0.431
+16  cARM2   30     Fast 20 3.04 0.727   2.86 0.163 0.340
+
+ ARMOUR * MASS
+  Armour Mass  N mean    sd median    se    ci
+1  pARM1   15 40 2.66 0.921   2.58 0.146 0.295
+2  pARM1   30 40 2.74 0.747   2.70 0.118 0.239
+3  cARM1   15 40 2.66 0.770   2.70 0.122 0.246
+4  cARM1   30 40 3.05 0.775   2.88 0.123 0.248
+5   TBAS   15 40 2.65 0.897   2.56 0.142 0.287
+6   TBAS   30 40 3.07 0.822   3.00 0.130 0.263
+7  cARM2   15 40 2.72 0.818   2.71 0.129 0.262
+8  cARM2   30 40 3.04 0.819   2.95 0.129 0.262
+
+ ARMOUR * SPEED
+  Armour    Speed  N mean    sd median    se    ci
+1  pARM1 Moderate 40 2.63 0.834   2.60 0.132 0.267
+2  pARM1     Fast 40 2.78 0.839   2.72 0.133 0.268
+3  cARM1 Moderate 40 2.81 0.792   2.69 0.125 0.253
+4  cARM1     Fast 40 2.90 0.800   2.86 0.127 0.256
+5   TBAS Moderate 40 2.87 0.903   2.77 0.143 0.289
+6   TBAS     Fast 40 2.85 0.870   2.80 0.138 0.278
+7  cARM2 Moderate 40 2.89 0.926   2.93 0.146 0.296
+8  cARM2     Fast 40 2.87 0.730   2.78 0.115 0.234
+
+ MASS * SPEED
+  Mass    Speed  N mean    sd median     se    ci
+1   15 Moderate 80 2.69 0.920   2.61 0.1028 0.205
+2   15     Fast 80 2.66 0.771   2.65 0.0862 0.172
+3   30 Moderate 80 2.91 0.794   2.84 0.0888 0.177
+4   30     Fast 80 3.05 0.796   2.90 0.0890 0.177
+
+ARMOUR
+  Armour  N mean    sd median     se    ci
+1  pARM1 80 2.70 0.834   2.65 0.0933 0.186
+2  cARM1 80 2.86 0.793   2.81 0.0886 0.176
+3   TBAS 80 2.86 0.881   2.77 0.0985 0.196
+4  cARM2 80 2.88 0.829   2.81 0.0927 0.184
+
+MASS
+  Mass   N mean    sd median     se    ci
+1   15 160 2.67 0.846   2.61 0.0669 0.132
+2   30 160 2.98 0.796   2.88 0.0629 0.124
+
+SPEED
+     Speed   N mean    sd median     se    ci
+1 Moderate 160 2.80 0.864   2.71 0.0683 0.135
+2     Fast 160 2.85 0.805   2.79 0.0637 0.126
