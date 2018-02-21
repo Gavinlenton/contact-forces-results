@@ -196,8 +196,6 @@ fileNames <- dir(path = armour_type_dir, pattern="*.csv")
 # Define sub-directories to save data in along the way
 subDirText = "summaries"; subDirOutliers = "outliersRemoved"; subDirQQplot = "QQ_plots";
 
-
-
 # Data processing ---------------------------------------------------------
 
 # Load data and store in data frame
@@ -317,3 +315,84 @@ for(i in fullFileNames){
   # Increment y
   y = y + 1
 }
+
+# Save data frame containing all variables to csv file
+write.csv(allData, paste0(armour_type_dir, "/", "allData.csv"))
+saveRDS(allData, paste0(armour_type_dir, "/", "allData.rds"))
+
+# T-tests for main effects of load and speed - paired with Benjamini corrections
+armour_type_dir <- "~/Google Drive/postDoctoralWork/2018 defence contact forces/EMG-assisted results/stats/contact-forces-results/with_NA/"
+allData <- read.csv(paste0(armour_type_dir, 'allData.csv'))
+
+# Test for differences between armour types at 30 kg and fast walking 
+data_30_fast<-  allData %>% 
+  filter(Mass == 30, Speed == "Fast")
+
+p_value_TBAS_cARM1 <- data_30_fast %>%
+  summarise_each(funs(t.test(.[Armour == "TBAS"], .[Armour == "cARM1"], paired = TRUE, p.adjust.methods = "BH")$p.value), 
+                 vars = lateral_kjcf_peak_noOut:total_kjcf_second_peak_noOut)
+
+p_value_TBAS_cARM2 <- data_30_fast %>%
+  summarise_each(funs(t.test(.[Armour == "TBAS"], .[Armour == "cARM2"], paired = TRUE, p.adjust.methods = "BH")$p.value), 
+                 vars = lateral_kjcf_peak_noOut:total_kjcf_second_peak_noOut)
+
+p_value_TBAS_pARM1 <- data_30_fast %>%
+  summarise_each(funs(t.test(.[Armour == "TBAS"], .[Armour == "pARM1"], paired = TRUE, p.adjust.methods = "BH")$p.value), 
+                 vars = lateral_kjcf_peak_noOut:total_kjcf_second_peak_noOut)
+
+p_value_cARM1_cARM2 <- data_30_fast %>%
+  summarise_each(funs(t.test(.[Armour == "cARM1"], .[Armour == "cARM2"], paired = TRUE, p.adjust.methods = "BH")$p.value), 
+                 vars = lateral_kjcf_peak_noOut:total_kjcf_second_peak_noOut)
+
+p_value_cARM1_pARM1 <- data_30_fast %>%
+  summarise_each(funs(t.test(.[Armour == "cARM1"], .[Armour == "pARM1"], paired = TRUE, p.adjust.methods = "BH")$p.value), 
+                 vars = lateral_kjcf_peak_noOut:total_kjcf_second_peak_noOut)
+
+p_value_cARM2_pARM1 <- data_30_fast %>%
+  summarise_each(funs(t.test(.[Armour == "cARM2"], .[Armour == "pARM1"], paired = TRUE, p.adjust.methods = "BH")$p.value), 
+                 vars = lateral_kjcf_peak_noOut:total_kjcf_second_peak_noOut)
+
+# Plots of all variables
+newOrder <- c("TBAS", "cARM1", "cARM2", "pARM1")
+fileNamesForSummary <- names(allData[,5:length(allData)])
+
+datalist = list();
+iteration <- 1
+# Loop through variables and create a summary
+for (variableName in fileNamesForSummary){
+  summary_data <- as.tibble(summarySE(data = data_30_fast, measurevar= variableName, groupvars="Armour")) %>% 
+    mutate(variable = variableName) %>% # Append the variable name as an extra factor
+    slice(match(newOrder, Armour)) # Creates summary tibble with Armour sorted accroding to newOrder
+  levels(summary_data$Armour) <- newOrder
+  datalist[[iteration]] <- summary_data # Add the data to the data list
+  iteration <- iteration + 1; # Loop to next iteration
+}
+
+# Combine data
+combined_data <- dplyr::bind_rows(datalist)
+combined_data$variable <- as.factor(combined_data$variable); # Add factors for each variable
+ 
+tiff(file="contact_forces_30kg_fast_diffArmour.tiff",width = 5, height = 3, units = 'in', res = 1200)
+
+# All on one plot kjcf
+plot_kjcf <- ggplot(combined_data, aes(x=variable, y=mean, fill = Armour)) +  
+  geom_errorbar(aes(ymin=0, ymax=mean+ci), width=.3, position=position_dodge(0.6), colour="grey") +
+  geom_bar(position=position_dodge(0.6), stat="identity", width = 0.5) + 
+  coord_cartesian(ylim=c(0,7)) +
+  scale_y_continuous(breaks=0:10*1, expand = c(0, 0)) + 
+  scale_x_discrete(expand = c(0.02, 0), 
+                   breaks = fileNamesForSummary,
+                   labels = c("Lateral", "Medial first peak", 
+                              "Medial second peak", "Total first peak", "Total second peak")) +
+  ylab(expression(Knee ~ joint ~ contact ~ force ~ (Nkg^{-1}))) +
+  theme_classic(base_size = 8, base_family = "Arial") +
+  theme(legend.background = element_rect(), legend.title = element_blank(),
+        panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), legend.position = "bottom",
+        panel.grid.minor.y = element_blank(), axis.line.y = element_line(colour = "grey"), 
+        axis.title.y = element_text(size=8), axis.ticks.x = element_line(colour = "grey"),
+        axis.line.x = element_line(colour = "grey"), axis.ticks.y = element_line(colour = "grey"),
+        axis.title.x = element_blank(), plot.title = element_text(hjust = -0.01, vjust=2.12),
+        axis.text.x = element_text(colour = "black"))
+
+plot_kjcf
+dev.off()
