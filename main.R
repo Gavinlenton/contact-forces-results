@@ -321,10 +321,11 @@ write.csv(allData, paste0(armour_type_dir, "/", "allData.csv"))
 saveRDS(allData, paste0(armour_type_dir, "/", "allData.rds"))
 
 # T-tests for main effects of load and speed - paired with Benjamini corrections
-armour_type_dir <- "~/Google Drive/postDoctoralWork/2018 defence contact forces/EMG-assisted results/stats/contact-forces-results/with_NA/"
+armour_type_dir <- "~/Google Drive/postDoctoralWork/2018 defence contact forces/EMG-assisted results/stats/contact-forces-results/only_armour_type/"
 allData <- read.csv(paste0(armour_type_dir, 'allData.csv'))
 
-# Test for differences between armour types at 30 kg and fast walking 
+# T-Tests for differences between armour types at 30 kg and fast walking  ---------------------------------------------------------------------
+
 data_30_fast<-  allData %>% 
   filter(Mass == 30, Speed == "Fast")
 
@@ -396,3 +397,40 @@ plot_kjcf <- ggplot(combined_data, aes(x=variable, y=mean, fill = Armour)) +
 
 plot_kjcf
 dev.off()
+
+# Logistic regression -----------------------------------------------------
+mylogit_latcf <- glm(allData$vest_fit_f ~  lateral_kjcf_peak_noOut, family = "binomial" , data = allData)
+mylogit_max_pressure <- glm(data4probit_noTBAS$shoulders_comf_f ~  max_pressure_f, family = "binomial" , data = data4probit_noTBAS)
+mylogit_max_pressure_unloading <- glm(data4probit_noTBAS$offset_f ~  max_pressure_f, family = "binomial" , data = data4probit_noTBAS)
+
+# Generate summaries for plotting
+summary_medCF_fit <- summarySE(data = allData, measurevar= "total_kjcf_first_peak_noOut", groupvars= c("Armour", "vest_fit_f"))
+summary_medCF_fit$vest_fit_f <-  as.factor(summary_medCF_fit$vest_fit_f)
+levels(summary_medCF_fit$Armour) <- newOrder
+
+saveRDS(summary_medCF_fit, paste(armour_type_dir, "/", "lateral_kjcf_peak", "_vest_fit.rds", sep = ""))
+
+# Plot contact force and armour fit
+tiff(file="vest_fit_total_contact_force_firstPeak.tiff",width = 5, height = 4, units = 'in', res = 900, compression = "lzw")
+
+tt <- ggplot(summary_medCF_fit, aes(x=Armour, y=mean, fill = vest_fit_f)) + 
+  geom_bar(position=position_dodge(0.7), stat="identity", width = 0.7) +
+  geom_errorbar(aes(ymin=mean-ci, ymax=mean+ci),
+                width=.08, size = 0.5, position=position_dodge(0.7), colour="gray40") +
+  ylab(expression(Knee ~ joint ~ contact ~ force ~ (Nkg^{-1}))) +
+  coord_cartesian(ylim=c(0,8)) +
+  scale_fill_manual(name="", # Legend label, use darker colors
+                    breaks=c("0", "1"),
+                    labels=c("Not acceptable", "Acceptable"),
+                    values = c("lightskyblue1", "deepskyblue3")) +
+  scale_y_continuous(breaks=0:7*1, expand = c(0, 0)) + 
+  theme_classic(base_size = 14, base_family = "Arial") +
+  theme(legend.background = element_rect(), legend.direction = "horizontal", legend.position = "bottom",
+        panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), axis.ticks.y = element_line(colour="grey"),
+        panel.grid.minor.y = element_blank(), axis.ticks.x = element_blank(), axis.line.y = element_line(colour = "grey"),
+        axis.line.x = element_line(colour = "grey"),axis.title.x = element_blank()) 
+tt
+dev.off()
+
+
+
